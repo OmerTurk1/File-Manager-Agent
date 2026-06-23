@@ -1,6 +1,11 @@
 import inspect
 import tools
 import agent
+import traceback
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 TYPE_MAP = {
     str: "string",
@@ -11,9 +16,25 @@ TYPE_MAP = {
     dict: "object"
 }
 
+FRONT_CHARS = int(os.getenv("FRONT_CHARS"))
+BACK_CHARS = int(os.getenv("BACK_CHARS"))
+def truncate_strings(data):
+    if isinstance(data, dict):
+        return {k: truncate_strings(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [truncate_strings(item) for item in data]
+    elif isinstance(data, str):
+        if len(data) > (FRONT_CHARS + BACK_CHARS + 3):
+            return f"{data[:FRONT_CHARS]}...{data[-BACK_CHARS:]}"
+        return data
+    return data
+
 def build_tools():
     tool_schemas = []
     for name, func in inspect.getmembers(tools, inspect.isfunction):
+        if not getattr(func, "is_tool", False):
+            continue
+        
         signature = inspect.signature(func)
         properties = {}
         required = []
@@ -47,7 +68,7 @@ def main():
     print("--- Database Manager Agent Started ---")
 
     while True:
-        user_input = input("\n >>> Make your query (or 'exit' to quit): ").strip()
+        user_input = input("\n >>> Make your query (or 'exit'):").strip()
 
         if user_input.lower() == 'exit':
             break
@@ -83,7 +104,8 @@ def main():
                     selected_tool = getattr(tools, response.tool_name)
                     inputs = response.input_parameters
 
-                    print(f" - TOOL CALL: {response.tool_name} | INPUTS: {inputs}")
+                    truncated_inputs = truncate_strings(inputs)
+                    print(f" - TOOL CALL: {response.tool_name} | INPUTS: {truncated_inputs}")
 
                     if isinstance(inputs, dict):
                         tool_output = selected_tool(**inputs)
@@ -101,6 +123,7 @@ def main():
                 except Exception as e:
                     error_msg = f"Error executing tool: {str(e)}"
                     print(f" - {error_msg}")
+                    traceback.print_exc()
                     agent_instance.add_tool_execution(response.tool_name, inputs, error_msg)
 
         print(f" [Token Usage -> Prompt: {total_prompt_tokens} | Completion: {total_completion_tokens} | Total: {total_prompt_tokens + total_completion_tokens}]")

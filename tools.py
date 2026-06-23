@@ -12,6 +12,11 @@ VIEWABLE_FOLDER_ROOT = os.getenv("VIEWABLE_FOLDER_ROOT")
 if not MAIN_ROOT_FOLDER or not VIEWABLE_FOLDER_ROOT:
     raise ValueError("Environment variables MAIN_ROOT_FOLDER and VIEWABLE_FOLDER_ROOT must be set!")
 
+# --- TAGS ---
+def register_tool(func):
+    func.is_tool = True
+    return func
+
 # --- CORE FUNCTIONS ---
 
 def _resolve_and_validate_path(path_str: str, allowed_root: str) -> str:
@@ -53,6 +58,7 @@ def _resolve_read_path(path_str: str) -> str:
     
 # --- TOOL FUNCTIONS ---
 
+@register_tool
 def create_element(element_name: str, file_type: str, location: str = "") -> str:
     """
     Create a file or folder at a given location within the workspace.
@@ -87,7 +93,7 @@ def create_element(element_name: str, file_type: str, location: str = "") -> str
     except Exception as e:
         return f"Error creating element: {str(e)}"
 
-
+@register_tool
 def write_file(file_name: str, content: str) -> str:
     """
     Write string content into a file within the workspace. Overwrites if file exists.
@@ -112,7 +118,7 @@ def write_file(file_name: str, content: str) -> str:
     except Exception as e:
         return f"Error writing to file: {str(e)}"
 
-
+@register_tool
 def empty_file(file_name: str) -> str:
     """
     Clear the contents of a file within the workspace.
@@ -138,7 +144,7 @@ def empty_file(file_name: str) -> str:
     except Exception as e:
         return f"Error emptying file: {str(e)}"
 
-
+@register_tool
 def delete_element(element_name: str) -> str:
     """
     Delete a file or folder within the workspace.
@@ -165,7 +171,7 @@ def delete_element(element_name: str) -> str:
     except Exception as e:
         return f"Error deleting element: {str(e)}"
 
-
+@register_tool
 def read_file(file_name: str) -> str:
     """
     Read and return the text content of a file from allowed viewable roots or workspace.
@@ -190,7 +196,7 @@ def read_file(file_name: str) -> str:
     except Exception as e:
         return f"Error reading file: {str(e)}"
 
-
+@register_tool
 def search_folder(folder_name: str) -> Union[List[str], str]:
     """
     Return a structured flat list of a folder's contents (files and subfolders).
@@ -217,7 +223,7 @@ def search_folder(folder_name: str) -> Union[List[str], str]:
     except Exception as e:
         return f"Error searching folder: {str(e)}"
 
-
+@register_tool
 def move_file(file_name: str, new_location: str) -> str:
     """
     Move a file or folder to a new destination within the workspace.
