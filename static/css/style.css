@@ -1,0 +1,44 @@
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #09090b; /* Zinc 950 / Black exact */
+}
+
+.code-font {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom Scrollbar to match minimalist theme */
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #27272a; /* Zinc 800 */
+    border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #3f3f46; /* Zinc 700 */
+}
+/* Mesaj konteynerları için hizalama kuralları */
+.chat-row {
+    display: flex;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+.chat-row.user-row {
+    justify-content: flex-end;
+}
+.chat-row.agent-row, .chat-row.tool-row {
+    justify-content: flex-start;
+}
+.chat-row.system-row {
+    justify-content: center;
+}
+
+/* Genişlik sınırlamaları (Arayüzün taşmaması için) */
+.chat-bubble {
+    max-width: 80%;
+}

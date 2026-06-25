@@ -19,8 +19,9 @@ FileManagerAgent is a Python project designed to manage file system operations a
 ## Run
 
 1. Create a `.env` file and populate required values using `.env.example`.
-2. From the project root, run `python pipeline.py` if your Python environment is ready.
-3. Respond to agent prompts or enter file management and data query requests.
+2. Install dependencies with `pip install -r requirements.txt`.
+3. Start the web UI from the project root with `python app.py`.
+4. Open `http://127.0.0.1:5000` in your browser.
 
 ## Important notes
 

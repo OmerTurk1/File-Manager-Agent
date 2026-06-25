@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hesap Makinesi</title>
+<style>
+  body { font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
+  .calculator { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+  input[type="text"] { width: 100%; padding: 10px; font-size: 1.2rem; margin-bottom: 10px; text-align: right; }
+  button { width: 45px; height: 45px; margin: 5px 5px 0 0; font-size: 1.1rem; cursor: pointer; }
+  .buttons { display: flex; flex-wrap: wrap; max-width: 200px; }
+</style>
+</head>
+<body>
+<div class="calculator">
+  <input type="text" id="display" readonly />
+  <div class="buttons">
+    <button onclick="appendValue('7')">7</button>
+    <button onclick="appendValue('8')">8</button>
+    <button onclick="appendValue('9')">9</button>
+    <button onclick="appendValue('/')">÷</button>
+
+    <button onclick="appendValue('4')">4</button>
+    <button onclick="appendValue('5')">5</button>
+    <button onclick="appendValue('6')">6</button>
+    <button onclick="appendValue('*')">×</button>
+
+    <button onclick="appendValue('1')">1</button>
+    <button onclick="appendValue('2')">2</button>
+    <button onclick="appendValue('3')">3</button>
+    <button onclick="appendValue('-')">−</button>
+
+    <button onclick="appendValue('0')">0</button>
+    <button onclick="appendValue('.')">.</button>
+    <button onclick="calculateResult()">=</button>
+    <button onclick="appendValue('+')">+</button>
+
+    <button onclick="clearDisplay()" style="width: 100%; margin-top: 10px;">C</button>
+  </div>
+</div>
+<script>
+  const display = document.getElementById('display');
+  function appendValue(val) {
+    display.value += val;
+  }
+  function clearDisplay() {
+    display.value = '';
+  }
+  function calculateResult() {
+    try {
+      const result = eval(display.value);
+      display.value = result;
+    } catch (e) {
+      display.value = 'Error';
+    }
+  }
+</script>
+</body>
+</html>
