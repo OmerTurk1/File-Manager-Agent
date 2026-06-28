@@ -19,8 +19,6 @@ async function savePreferences() {
     const data = {
         MAIN_ROOT_FOLDER: document.getElementById('pref-root').value,
         VIEWABLE_FOLDER_ROOT: document.getElementById('pref-viewable').value,
-        FRONT_CHARS: parseInt(document.getElementById('pref-front').value) || 12,
-        BACK_CHARS: parseInt(document.getElementById('pref-back').value) || 10,
         OPENAI_API_KEY: document.getElementById('pref-key').value || null
     };
 
@@ -42,7 +40,11 @@ async function savePreferences() {
 // 2. SSE Bağlantısını Başlatma ve Canlı Log Akışı
 function startAgentTask() {
     const inputField = document.getElementById('user-input');
+    const modelField = document.getElementById('model-input');
+
     const userInput = inputField.value.trim();
+    const aiModel = modelField.value.trim();
+
     if (!userInput) return;
 
     if (eventSource) {
@@ -62,7 +64,7 @@ function startAgentTask() {
     inputField.value = '';
 
     // SSE EventSource başlatılıyor
-    eventSource = new EventSource(`/chat_stream?user_input=${encodeURIComponent(userInput)}`);
+    eventSource = new EventSource(`/chat_stream?user_input=${encodeURIComponent(userInput)}&ai_model=${encodeURIComponent(aiModel)}`);
 
     eventSource.onmessage = function(event) {
         const data = JSON.parse(event.data);
@@ -240,7 +242,7 @@ function appendLog(type, text) {
                 <div class="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-mono text-[${logoTextSize}px] font-bold">
                     AI
                 </div>`;
-            contentClass = `bg-blue-950/20 border border-blue-900/30 p-3 rounded-xl text-blue-200/90 whitespace-pre-wrap max-w-[70%] text-[${contentTextSize}px] w-auto`;
+            contentClass = `bg-emerald-950/20 border border-emerald-900/30 p-3 rounded-xl text-emerald-200/90 whitespace-pre-wrap max-w-[70%] text-[${contentTextSize}px] w-auto`;
             break;
 
         case 'error':
@@ -261,7 +263,7 @@ function appendLog(type, text) {
         case 'system':
             wrapper.className = "flex justify-center my-2 w-full text-center";
             logoHTML = "";
-            contentClass = "text-zinc-600 font-mono text-xs max-w-3xl border border-zinc-800/40 bg-zinc-900/20 px-3 py-1.5 rounded-md";
+            contentClass = "text-white-600 font-mono text-xs max-w-3xl border border-white-800/40 bg-white-900/20 px-3 py-1.5 rounded-md";
             break;
 
         default:

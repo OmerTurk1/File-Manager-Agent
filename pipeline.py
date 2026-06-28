@@ -66,6 +66,7 @@ def build_tools():
 def main():
     tool_schemas = build_tools()
     agent_instance = agent.Agent(OPENAI_API_KEY)
+    ai_model = "gpt-4.1-mini"
 
     print("--- Database Manager Agent Started ---")
 
@@ -87,7 +88,7 @@ def main():
         total_completion_tokens = 0
 
         while not work_finished:
-            response, usage = agent_instance.send_to_model(tools_schema=tool_schemas)
+            response, usage = agent_instance.send_to_model(tools_schema=tool_schemas, ai_model=ai_model)
 
             if usage:
                 total_prompt_tokens += usage.prompt_tokens
@@ -105,6 +106,9 @@ def main():
                 try:
                     selected_tool = getattr(tools, response.tool_name)
                     inputs = response.input_parameters
+
+                    if isinstance(inputs, list) and len(inputs) == 1 and isinstance(inputs[0], dict): # if input list is only contains one dict
+                        inputs = inputs[0]
 
                     truncated_inputs = truncate_strings(inputs)
                     print(f" - TOOL CALL: {response.tool_name} | INPUTS: {truncated_inputs}")

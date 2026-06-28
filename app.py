@@ -5,12 +5,17 @@ import os
 import inspect
 import traceback
 import webbrowser
+from dotenv import load_dotenv
 
 # my files
 import agent
 import tools
 
+load_dotenv()
+
 PREFERENCES_FILE = "preferences.json"
+FRONT_CHARS = os.getenv("FRONT_CHARS")
+BACK_CHARS = os.getenv("BACK_CHARS")
 
 app = Flask(__name__)
 preferences = {}
@@ -31,8 +36,6 @@ def get_preferences():
             json.dump({
                 "MAIN_ROOT_FOLDER" : "workspace",
                 "VIEWABLE_FOLDER_ROOT" : "C:/",
-                "FRONT_CHARS" : 12,
-                "BACK_CHARS" : 10,
                 "OPENAI_API_KEY" : None
             }, f, indent=4)
             
@@ -49,18 +52,19 @@ def truncate_strings(data, split_coef=1):
     elif isinstance(data, list):
         return [truncate_strings(item) for item in data]
     elif isinstance(data, str):
-        front = preferences.get("FRONT_CHARS") * split_coef
-        back = preferences.get("BACK_CHARS") * split_coef
+        front = FRONT_CHARS * split_coef
+        back = BACK_CHARS * split_coef
         if len(data) > (front + back + 3):
             return f"{data[:front]}...{data[-back:]}"
         return data
     return data
 
 def build_tools():
-    schemas = []
+    tool_schemas = []
     for name, func in inspect.getmembers(tools, inspect.isfunction):
         if not getattr(func, "is_tool", False):
             continue
+        
         signature = inspect.signature(func)
         properties = {}
         required = []
@@ -72,7 +76,7 @@ def build_tools():
             if param.default == inspect.Parameter.empty:
                 required.append(param_name)
 
-        schemas.append({
+        tool_schemas.append({
             "type": "function",
             "function": {
                 "name": name,
@@ -85,7 +89,7 @@ def build_tools():
                 }
             }
         })
-    return schemas
+    return tool_schemas
 
 @app.route('/')
 def index():
@@ -99,18 +103,12 @@ def index():
 @app.route('/chat_stream')
 def chat_stream():
     user_input = request.args.get("user_input", "").strip()
+    ai_model = request.args.get("ai_model").strip()
 
     if not user_input:
         return jsonify({"status": "error", "message": "Input cannot be empty"}), 400
 
     def generate():
-        global preferences, tool_schemas, agent_instance
-        
-        if not agent_instance:
-            preferences = get_preferences()
-            tool_schemas = build_tools()
-            agent_instance = agent.Agent(preferences.get("OPENAI_API_KEY"))
-
         try:
             agent_instance.start_new_task(user_input)
         except Exception as task_err:
@@ -124,11 +122,12 @@ def chat_stream():
         while not work_finished:
             # 🛑 CRITICAL: Model çağrısını korumaya alıyoruz
             try:
-                response, usage = agent_instance.send_to_model(tools_schema=tool_schemas)
+                response, usage = agent_instance.send_to_model(tools_schema=tool_schemas, ai_model=ai_model)
+                print(f"\nAgent Response: {response}")
             except Exception as model_err:
-                print("!!! MODEL SORGUSU SIRASINDA HATA OLUŞTU !!!")
-                traceback.print_exc() # Konsolunda hatanın satır satır nedenini göreceksin
-                yield f"data: {json.dumps({'event': 'error', 'message': f'Model Hatası: {str(model_err)}'}, ensure_ascii=False)}\n\n".encode('utf-8')
+                print("\n!!! MODEL SORGUSU SIRASINDA HATA OLUŞTU !!!\n")
+                traceback.print_exc()
+                yield f"data: {json.dumps({'event': 'error', 'message': f'Model Error: {str(model_err)}'}, ensure_ascii=False)}\n\n".encode('utf-8')
                 break
 
             if usage:
@@ -156,12 +155,17 @@ def chat_stream():
 
                 tool_name = response.tool_name
                 inputs = response.input_parameters
+
+                if isinstance(inputs, list) and len(inputs) == 1 and isinstance(inputs[0], dict): # if input list is only contains one dict
+                    inputs = inputs[0]
+                
                 truncated_inputs = truncate_strings(inputs)
 
                 yield f"data: {json.dumps({'event': 'tool_call', 'tool_name': tool_name, 'inputs': truncated_inputs}, ensure_ascii=False)}\n\n".encode('utf-8')
 
                 try:
                     selected_tool = getattr(tools, tool_name)
+                    
                     if isinstance(inputs, dict):
                         tool_output = selected_tool(**inputs)
                     elif isinstance(inputs, list):
@@ -171,6 +175,7 @@ def chat_stream():
 
                     agent_instance.add_tool_execution(tool_name, inputs, tool_output)
                     truncated_outputs = truncate_strings(str(tool_output), split_coef=3)
+                    print(f"Tool Output: {truncated_outputs}")
 
                     yield f"data: {json.dumps({'event': 'tool_result', 'tool_name': tool_name, 'output': truncated_outputs}, ensure_ascii=False)}\n\n".encode('utf-8')
 
